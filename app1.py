@@ -396,20 +396,27 @@ def main():
         """, unsafe_allow_html=True)
 
     st.sidebar.image("narwal_logo.png", use_column_width=True)
-    st.title("OmniDoc AI Assistant: Advanced Multilingual Document Bot")
+    st.title("🤖 OmniDoc AI Assistant: Advanced Multilingual Document Bot")
     st.write("""
         Welcome to **OmniDoc AI Assistant**, your comprehensive AI-powered assistant for all your document needs. 
         Our cutting-edge tool is designed to streamline your document handling and enhance your productivity with the following key features:
 
-        1. **Handles Texts and Tables:** OmniDoc seamlessly extracts and processes both textual content and tabular data from your documents.
-        2. **Performs Q&A and Summarizations:** Get precise answers to your queries and concise summaries of lengthy documents with ease.
-        3. **Multilingual Capabilities:** Break language barriers effortlessly as OmniDoc supports document translation and interaction in multiple languages.
-        4. **Provides Follow-Up Questions:** Engage in deeper, more meaningful interactions with our intelligent follow-up question generation.
+        1. **📄 Handles Texts and Tables:** OmniDoc seamlessly extracts and processes both textual content and tabular data from your documents.
+        2. **❓ Performs Q&A and Summarizations:** Get precise answers to your queries and concise summaries of lengthy documents with ease.
+        3. **🌍 Multilingual Capabilities:** Break language barriers effortlessly as OmniDoc supports document translation and interaction in multiple languages.
+        4. **🔍 Provides Follow-Up Questions:** Engage in deeper, more meaningful interactions with our intelligent follow-up question generation.
 
         Experience the future of document management with OmniDoc AI Assistant!
     """)
 
-    uploaded_files = st.sidebar.file_uploader("Upload PDF Documents", type=['pdf'], accept_multiple_files=True, key="file_uploader")
+    uploaded_files = st.sidebar.file_uploader("📂 Upload PDF Documents", type=['pdf'], accept_multiple_files=True, key="file_uploader")
+    st.sidebar.write("### 💡 Pro Tips for Uploading PDFs")
+    st.sidebar.write("To get the most out of our PDF uploader, follow these tips:")
+    st.sidebar.write("🔹 **Be concise and upload relevant PDFs**")
+    st.sidebar.write("🔹 **Use clear and descriptive file names**")
+    st.sidebar.write("🔹 **Avoid uploading duplicate PDFs**")
+    st.sidebar.write("🔹 **Keep your PDFs organized and logical**")
+        
 
     if uploaded_files:
         documents = []
