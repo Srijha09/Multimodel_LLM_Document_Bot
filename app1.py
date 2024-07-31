@@ -6,6 +6,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.schema import Document
 from langdetect import detect
+from typing import List, Tuple, Dict
+import numpy as np
 import json
 import tenacity
 import os
@@ -179,20 +181,76 @@ def extract_answer_from_chain(context, question):
     result = query_mistral([{"role": "system", "content": prompt}])
 
     return result, []
+stop_words = {"what","where","when","who","why","how","is","are","am","be","been","being","have","has","had","do","does","did","will","would",
+    "shall","should","can","could","may","might","must","ought","shall","should","will","would"}
 
-def is_question_ambiguous(question: str, answer: str) -> bool:
-    system_prompt = """Analyze the following question. Determine if the question is ambiguous and could benefit from clarification.
-    Respond with 'Yes' if the question is ambiguous, or 'No' if it's clear and specific.
+def preprocess_text(text: str) -> str:
+    """
+    Preprocess the text by converting it to lowercase, removing punctuation, and removing stop words.
+    """
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = ' '.join([word for word in text.split() if word not in stop_words])
+    return text
 
-    Question: {question}
-    Answer: {answer}
-
-    Is the question ambiguous?"""
-
-    prompt = system_prompt.format(question=clean_text(question), answer=clean_text(answer))
-    result = query_mistral([{"role": "system", "content": prompt}])
+def calculate_relevance(query: str, chunks: List[str]) -> List[float]:
+    """
+    Calculate the relevance of each chunk to the query.
+    """
+    preprocessed_query = preprocess_text(query)
+    preprocessed_chunks = [preprocess_text(chunk) for chunk in chunks]
     
-    return result.strip().lower() == 'yes'
+    vectorizer = TfidfVectorizer().fit([preprocessed_query] + preprocessed_chunks)
+    query_vector = vectorizer.transform([preprocessed_query])
+    chunk_vectors = vectorizer.transform(preprocessed_chunks)
+    
+    relevance_scores = cosine_similarity(query_vector, chunk_vectors)[0]
+    return list(relevance_scores)
+
+def analyze_query_complexity(query: str) -> Dict[str, any]:
+    """
+    Analyze the complexity of the query.
+    """
+    parts = re.split(r'\band\b|\bor\b|,', query.lower())
+    return {
+        "num_parts": len(parts),
+        "has_multiple_questions": len(re.findall(r'\?', query)) > 1 or any(word in query.lower() for word in stop_words)
+    }
+
+def check_query_ambiguity(query: str, chunks: List[str]) -> Tuple[bool, Dict[str, any]]:
+    """
+    Check if the query is ambiguous.
+    """
+    relevance_scores = calculate_relevance(query, chunks)
+    query_analysis = analyze_query_complexity(query)
+    
+    max_score = max(relevance_scores)
+    mean_score = np.mean(relevance_scores)
+    std_score = np.std(relevance_scores)
+    
+    is_ambiguous = False
+    reasons = []
+
+    if query_analysis["has_multiple_questions"] and query_analysis["num_parts"] > 2:
+        is_ambiguous = True
+        reasons.append("Query contains multiple distinct questions or comparisons")
+
+    if max_score < 1.5 * mean_score:
+        is_ambiguous = True
+        reasons.append("No chunk is significantly more relevant than others")
+
+    if std_score < 0.05 * max_score:
+        is_ambiguous = True
+        reasons.append("All chunks have similar relevance, query might be too broad")
+
+    return is_ambiguous, {
+        "query_analysis": query_analysis,
+        "relevance_scores": relevance_scores,
+        "max_score": max_score,
+        "mean_score": mean_score,
+        "std_score": std_score,
+        "reasons_for_ambiguity": reasons if is_ambiguous else ["Query appears unambiguous"]
+    }
 
 def generate_follow_up_questions(question: str, answer: str) -> List[str]:
     system_prompt = """Based on the following context, question, and answer, generate three specific follow-up questions that a user might ask next. Do not include any introductory text or numbering.
@@ -210,6 +268,19 @@ def generate_follow_up_questions(question: str, answer: str) -> List[str]:
     
     return questions[:3]
 
+def ask_follow_up_questions(query: str, chunks: List[str]) -> List[str]:
+    """
+    Ask follow-up questions based on the query and chunks.
+    """
+    is_ambiguous, analysis = check_query_ambiguity(query, chunks)
+    if is_ambiguous:
+        # If the query is ambiguous, generate follow-up questions to clarify the query
+        follow_up_questions = generate_follow_up_questions(query)
+        return follow_up_questions
+    else:
+        # If the query is not ambiguous, return an empty list
+        return []
+
 def calculate_similarity(text1, text2):
     # Use TF-IDF vectorization and cosine similarity
     vectorizer = TfidfVectorizer()
@@ -225,7 +296,7 @@ def find_similar_documents(answer, documents):
         similarities.append((document, similarity))
     # Sort documents by similarity and return top N
     similarities.sort(key=lambda x: x[1], reverse=True)
-    threshold = 0.5  
+    threshold = 0.7  
     return [(doc, sim) for doc, sim in similarities if sim > threshold]
 
 def generate_pdf_link(source):
@@ -242,19 +313,17 @@ def handle_query(query: str, source_lang: str) -> Tuple[str, str, str, List[str]
     detected_language = detect_language(query)
     if detected_language != 'en':
         query = GoogleTranslator(source=detected_language, target='en').translate(query)  # Use GoogleTranslator for string translation
-
     response = retrieve_chunks(query)
     if not response:
         return "No relevant information found.", "", "en", []
-
     combined_context = " ".join([chunk.page_content for chunk in response])
     answer, context = extract_answer_from_chain(combined_context, query)
-
     if source_lang != 'en':
         answer = GoogleTranslator(source='en', target=source_lang).translate(answer)  # Use GoogleTranslator for string translation
     complete_answers = handle_long_responses(answer)
 
-    follow_up_questions = generate_follow_up_questions(query, answer)
+    chunks = [chunk.page_content for chunk in response]
+    follow_up_questions = ask_follow_up_questions(query, chunks)
     if source_lang != 'en':
         follow_up_questions = [GoogleTranslator(source='en', target=source_lang).translate(q) for q in follow_up_questions]
 
@@ -267,7 +336,6 @@ def handle_query(query: str, source_lang: str) -> Tuple[str, str, str, List[str]
         })
     similar_documents = find_similar_documents(answer, sources_info)
     print(similar_documents)
-
     links = []
     for document, similarity in similar_documents:
         if isinstance(document, dict):
@@ -277,7 +345,6 @@ def handle_query(query: str, source_lang: str) -> Tuple[str, str, str, List[str]
             links.append(f"[{pdf_name} (Page {page_number})]({link})")
         else:
             print("Error: Document is not a dictionary")
-
     sources_info_str_with_links = ", ".join(links)
     return " ".join(complete_answers) + f"\n\nSources: {sources_info_str_with_links}", detected_language, follow_up_questions
 
@@ -428,9 +495,14 @@ def main():
             st.write(st.session_state.query)
         st.session_state.chat_history.append(("user", st.session_state.query))
 
-        answer, _, followup_questions = handle_query(st.session_state.query, st.session_state.current_language)
+         # Add a loading animation with an emoji
         with st.chat_message("assistant"):
-            st.markdown(answer, unsafe_allow_html=True)
+            st.write("🤔 Thinking...")
+
+        placeholder = st.empty()
+
+        answer, _, followup_questions = handle_query(st.session_state.query, st.session_state.current_language)
+        placeholder.markdown(answer, unsafe_allow_html=True)
         st.session_state.chat_history.append(("assistant", answer))
         st.session_state.latest_response = answer
         st.session_state.followup_questions = followup_questions
