@@ -44,5 +44,14 @@ Clone the repository and install the necessary dependencies to start using OmniD
 git clone https://github.com/your-repo/omnidoc-ai-assistant.git
 cd omnidoc-ai-assistant
 pip install -r requirements.txt
+```
 
+## Usage
+Run the OmniDoc AI Assistant using Streamlit:
+
+```bash
+streamlit run app.R
+```
+
+Once the application is running, you can upload documents through the sidebar and start using all of OmniDoc’s powerful features.
 
