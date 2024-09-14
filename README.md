@@ -34,6 +34,13 @@ Welcome to **OmniDoc AI Assistant**, a comprehensive AI-powered assistant design
 
 Clone the repository and install the necessary dependencies to start using OmniDoc AI Assistant.
 
+
+
+![Document Upload Interface](images/img1.png)
+
+
+![Results and Follow up Questions](images/img3.png)
+
 ```bash
 git clone https://github.com/your-repo/omnidoc-ai-assistant.git
 cd omnidoc-ai-assistant
