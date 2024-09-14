@@ -29,19 +29,20 @@ Welcome to **OmniDoc AI Assistant**, a comprehensive AI-powered assistant design
    - **Use clear and descriptive file names:** This helps you keep track of your documents.
    - **Avoid uploading duplicate PDFs:** Save time by uploading only unique documents.
    - **Keep your PDFs organized and logical:** Organizing your documents makes it easier for OmniDoc to handle them efficiently.
-
-## Installation
-
-Clone the repository and install the necessary dependencies to start using OmniDoc AI Assistant.
-
-
-
+  
+  
 ![Document Upload Interface](images/img1.png)
 
 
 ![Results and Follow up Questions](images/img3.png)
 
+## Installation
+
+Clone the repository and install the necessary dependencies to start using OmniDoc AI Assistant.
+
 ```bash
 git clone https://github.com/your-repo/omnidoc-ai-assistant.git
 cd omnidoc-ai-assistant
 pip install -r requirements.txt
+
+
