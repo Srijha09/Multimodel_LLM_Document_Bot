@@ -409,7 +409,7 @@ def main():
         Experience the future of document management with OmniDoc AI Assistant!
     """)
 
-    uploaded_files = st.sidebar.file_uploader("📂 Upload PDF Documents", type=['pdf'], accept_multiple_files=True, key="file_uploader")
+    uploaded_files = st.sidebar.file_uploader("📂 Upload PDF Documents", type=['pdf', 'docx', 'txt', 'pptx'], accept_multiple_files=True, key="file_uploader")
     st.sidebar.write("### 💡 Pro Tips for Uploading PDFs")
     st.sidebar.write("To get the most out of our PDF uploader, follow these tips:")
     st.sidebar.write("🔹 **Be concise and upload relevant PDFs**")
