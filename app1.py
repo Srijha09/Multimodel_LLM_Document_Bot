@@ -19,15 +19,15 @@ from deep_translator import GoogleTranslator
 from llama_parse import LlamaParse
 
 EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
-API_URL = "https://api.mistral.ai/v1/chat/completions"
-API_KEY = "jqfl7ja6Y6MdryHqcpgcLCNL7z19n2I3"
+API_URL = "API-URL"
+API_KEY = "API-KEY"
 headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {API_KEY}"
 }
 
 # Set up LlamaParse
-LLAMA_CLOUD_API_KEY = "llx-k52AkEbC7j1x91hHOGVh5UfF9phdJ7OMMj62BHRKWbkRFfbU"
+LLAMA_CLOUD_API_KEY = "LLAMA-CLOUD-KEY"
 with open('language_mappings.json', 'r') as file:
     LANGUAGE_CODES = json.load(file)
 
