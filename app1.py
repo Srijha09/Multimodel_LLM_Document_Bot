@@ -7,6 +7,9 @@ from langchain.vectorstores import FAISS
 from langchain.schema import Document
 from langdetect import detect
 from typing import List, Tuple, Dict
+from PIL import Image
+import pytesseract
+from pdf2image import convert_from_path
 import numpy as np
 import json
 import tenacity
@@ -19,15 +22,15 @@ from deep_translator import GoogleTranslator
 from llama_parse import LlamaParse
 
 EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L6-v2'
-API_URL = "API-URL"
-API_KEY = "API-KEY"
+API_URL = "https://api.mistral.ai/v1/chat/completions"
+API_KEY = "jqfl7ja6Y6MdryHqcpgcLCNL7z19n2I3"
 headers = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {API_KEY}"
 }
 
 # Set up LlamaParse
-LLAMA_CLOUD_API_KEY = "LLAMA-CLOUD-KEY"
+LLAMA_CLOUD_API_KEY = "llx-k52AkEbC7j1x91hHOGVh5UfF9phdJ7OMMj62BHRKWbkRFfbU"
 with open('language_mappings.json', 'r') as file:
     LANGUAGE_CODES = json.load(file)
 
@@ -41,17 +44,52 @@ current_language = 'en'
 translator = GoogleTranslator()
 llama_parse = LlamaParse(api_key=LLAMA_CLOUD_API_KEY, result_type="markdown")
 
+def extract_text_from_image(image_path: str) -> str:
+    """
+    Extract text from an image using OCR.
+    """
+    try:
+        image = Image.open(image_path)
+        text = pytesseract.image_to_string(image)
+        return text
+    except Exception as e:
+        st.error(f"Error extracting text from image: {e}")
+        return ""
+
 @st.cache_data
 def extract_text_from_pdf(file_path: str) -> List[Document]:
     try:
+        # Extract text from PDF using LlamaParse
         document = llama_parse.load_data(file_path)
-        doc_list = []
+        text_pages = []
         for page_number, page in enumerate(document, start=1):
-            doc = Document(page_content=page.text, metadata={"page_number": page_number})
+            text = page.text
+            text_pages.append(text)
+
+        # Convert PDF pages to images and perform OCR
+        images = convert_from_path(file_path)
+        ocr_pages = []
+        for image in images:
+            text = extract_text_from_image(image)
+            ocr_pages.append(text)
+
+        # Combine text and OCR results
+        combined_pages = []
+        for i in range(len(text_pages)):
+            text = text_pages[i]
+            ocr_text = ocr_pages[i]
+            combined_text = text + "\n\n" + ocr_text
+            combined_pages.append(combined_text)
+
+        # Create a Document object for each page
+        doc_list = []
+        for i, text in enumerate(combined_pages):
+            doc = Document(page_content=text, metadata={"page_number": i+1})
             doc_list.append(doc)
+
         return doc_list
     except Exception as e:
-        st.error(f"Error extracting text from PDF using LlamaParse: {e}")
+        st.error(f"Error extracting text from PDF: {e}")
         return []
 
 def split_text_into_chunks(documents, chunk_size=1000, chunk_overlap=500):
@@ -395,8 +433,8 @@ def main():
         </style>
         """, unsafe_allow_html=True)
 
-    st.sidebar.image("narwal_logo.png", use_column_width=True)
-    st.title("🤖 OmniDoc AI Assistant: Advanced Multilingual Document Bot")
+    
+    st.title("🤖 OmniDoc AI Assistant: Advanced Multilingual Multimodel Document Bot")
     st.write("""
         Welcome to **OmniDoc AI Assistant**, your comprehensive AI-powered assistant for all your document needs. 
         Our cutting-edge tool is designed to streamline your document handling and enhance your productivity with the following key features:
