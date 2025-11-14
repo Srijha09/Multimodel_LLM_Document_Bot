@@ -11,13 +11,14 @@ Welcome to **OmniDoc AI Assistant**, a comprehensive AI-powered assistant design
   OmniDoc is equipped with Optical Character Recognition (OCR) technology to extract text from images, making it easy to handle scanned documents or images containing important information.
   
 - **❓ Q&A and Summarizations:**
-  Get precise answers to your queries and concise summaries of even the longest documents, making it easier to digest and utilize information.
+  Get precise answers to your queries and concise summaries of even the longest documents, making it easier to digest and utilize information and add sources with page numbers as reference for each answer.
 
 - **🌍 Multilingual Capabilities:**
   Break language barriers effortlessly with OmniDoc's support for document translation and multilingual interaction, allowing you to work with content in different languages.
 
 - **🔍 Follow-Up Question Generation:**
   Engage in deeper, more meaningful interactions with intelligent follow-up questions generated based on the context of your documents.
+
 
 ## How to Use
 
@@ -50,7 +51,7 @@ pip install -r requirements.txt
 Run the OmniDoc AI Assistant using Streamlit:
 
 ```bash
-streamlit run app.R
+streamlit run app.py
 ```
 
 Once the application is running, you can upload documents through the sidebar and start using all of OmniDoc’s powerful features.
